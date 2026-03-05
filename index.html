@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Perfect 10 Seconds</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+
+body{
+font-family:Arial;
+text-align:center;
+background:#0f0f0f;
+color:white;
+padding-top:80px;
+margin:0;
+}
+
+h1{
+font-size:38px;
+}
+
+#timer{
+font-size:70px;
+margin-top:40px;
+transition:opacity 0.4s;
+}
+
+button{
+font-size:22px;
+padding:14px 34px;
+margin-top:25px;
+border:none;
+background:white;
+color:black;
+cursor:pointer;
+border-radius:10px;
+}
+
+button:hover{
+background:#ddd;
+}
+
+#result{
+margin-top:40px;
+font-size:26px;
+line-height:1.6;
+}
+
+#accuracy{
+font-weight:bold;
+}
+
+#message{
+margin-top:10px;
+font-size:20px;
+color:#aaa;
+}
+
+#bestScore{
+margin-top:20px;
+font-size:18px;
+color:#aaa;
+}
+
+canvas{
+position:fixed;
+top:0;
+left:0;
+pointer-events:none;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>Stop the Timer at 10 Seconds</h1>
+
+<div id="timer">0.00</div>
+
+<button id="startBtn">START</button>
+<button id="stopBtn" style="display:none;">STOP</button>
+
+<div id="result"></div>
+<div id="message"></div>
+<div id="bestScore"></div>
+
+<button id="shareBtn" style="display:none;">Share Score</button>
+
+<canvas id="confetti"></canvas>
+
+<audio id="clickSound" src="click.mp3" preload="auto"></audio>
+<audio id="perfectSound" src="perfect.mp3" preload="auto"></audio>
+<audio id="winSound" src="win.mp3" preload="auto"></audio>
+
+<script>
+
+let startTime;
+let timerInterval;
+
+const timer=document.getElementById("timer");
+const startBtn=document.getElementById("startBtn");
+const stopBtn=document.getElementById("stopBtn");
+const result=document.getElementById("result");
+const message=document.getElementById("message");
+const bestScoreDiv=document.getElementById("bestScore");
+const shareBtn=document.getElementById("shareBtn");
+
+const clickSound=document.getElementById("clickSound");
+const perfectSound=document.getElementById("perfectSound");
+const winSound=document.getElementById("winSound");
+
+let bestScore=localStorage.getItem("bestScore") || 0;
+
+bestScoreDiv.innerHTML="Best Accuracy: "+bestScore+"%";
+
+/* play sound instantly */
+function playSound(sound){
+sound.currentTime = 0
+sound.play()
+}
+
+startBtn.onclick=function(){
+
+playSound(clickSound)
+
+startBtn.style.display="none";
+stopBtn.style.display="inline";
+shareBtn.style.display="none";
+
+result.innerHTML="";
+message.innerHTML="";
+
+timer.style.opacity=1;
+
+startTime=Date.now();
+
+timerInterval=setInterval(function(){
+
+let current=(Date.now()-startTime)/1000;
+timer.innerHTML=current.toFixed(2);
+
+},10);
+
+setTimeout(function(){
+timer.style.opacity=0;
+},2000);
+
+};
+
+stopBtn.onclick=function(){
+
+playSound(clickSound)
+
+clearInterval(timerInterval);
+
+timer.style.opacity=1;
+
+let finalTime=(Date.now()-startTime)/1000;
+
+let difference=Math.abs(10-finalTime);
+
+/* ACCURACY SYSTEM */
+
+let accuracy=100-(difference*10);
+
+if(accuracy<0){
+accuracy=0;
+}
+
+accuracy=accuracy.toFixed(2);
+
+/* COLOR SYSTEM */
+
+let color="white"
+
+if(accuracy>=95){
+color="#00ff88"
+}
+else if(accuracy>=80){
+color="#ffd93b"
+}
+else{
+color="#ff4d4d"
+}
+
+/* RANK SYSTEM */
+
+let rank="";
+let percentBetter="";
+
+if(accuracy>=99.5){
+rank="Top 0.1% of players 🏆";
+percentBetter="Better than 99.9% of players";
+launchConfetti();
+playSound(winSound)
+}
+else if(accuracy>=99){
+rank="Top 1% of players";
+percentBetter="Better than 99% of players";
+playSound(winSound)
+}
+else if(accuracy>=97){
+rank="Top 5% of players";
+percentBetter="Better than 95% of players";
+}
+else if(accuracy>=94){
+rank="Top 10% of players";
+percentBetter="Better than 90% of players";
+}
+else if(accuracy>=90){
+rank="Top 25% of players";
+percentBetter="Better than 75% of players";
+}
+else{
+rank="Above Average";
+percentBetter="Better than 50% of players";
+}
+
+if(accuracy>=95){
+playSound(perfectSound)
+}
+
+const messages=[
+"So close!",
+"Your brain timing is impressive.",
+"Almost perfect timing.",
+"You can beat this.",
+"Incredible focus!"
+];
+
+let randomMessage=messages[Math.floor(Math.random()*messages.length)];
+
+result.innerHTML=
+"Your time: "+finalTime.toFixed(3)+" seconds<br><br>"+
+"<span id='accuracy' style='color:"+color+"'>Accuracy: "+accuracy+"%</span><br><br>"+
+percentBetter+"<br>"+rank;
+
+message.innerHTML=randomMessage;
+
+stopBtn.style.display="none";
+startBtn.style.display="inline";
+shareBtn.style.display="inline";
+
+if(accuracy>bestScore){
+bestScore=accuracy;
+localStorage.setItem("bestScore",accuracy);
+}
+
+bestScoreDiv.innerHTML="Best Accuracy: "+bestScore+"%";
+
+};
+
+shareBtn.onclick=function(){
+
+let text="I got "+bestScore+"% accuracy in the Perfect 10 Seconds game! Can you beat me?";
+
+navigator.clipboard.writeText(text);
+
+alert("Score copied! Share it with friends.");
+
+};
+
+/* CONFETTI */
+
+function launchConfetti(){
+
+const canvas=document.getElementById("confetti");
+const ctx=canvas.getContext("2d");
+
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+
+let pieces=[];
+
+for(let i=0;i<120;i++){
+pieces.push({
+x:Math.random()*canvas.width,
+y:Math.random()*canvas.height,
+r:Math.random()*6+2
+});
+}
+
+function draw(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+for(let i=0;i<pieces.length;i++){
+
+let p=pieces[i];
+
+ctx.beginPath();
+ctx.arc(p.x,p.y,p.r,0,Math.PI*2,true);
+ctx.fillStyle="hsl("+Math.random()*360+",100%,50%)";
+ctx.fill();
+
+p.y+=2;
+
+if(p.y>canvas.height){
+p.y=0;
+}
+
+}
+
+requestAnimationFrame(draw);
+
+}
+
+draw();
+
+setTimeout(()=>{
+ctx.clearRect(0,0,canvas.width,canvas.height);
+},2000);
+
+}
+
+</script>
+
+</body>
+</html>
